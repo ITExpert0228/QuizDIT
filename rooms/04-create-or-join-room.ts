@@ -5,6 +5,7 @@ export class CreateOrJoinRoom extends Room<any> {
     players = [];
     problems = [];
     gusers = [];
+    leaderboards = [];
     step = 0;
 
     onInit (options) {
@@ -75,13 +76,13 @@ export class CreateOrJoinRoom extends Room<any> {
                 'Higher commissions',
                 'Spend less time per sale',
                 'All of the above'],
-                c: 3
+                c: 2
             },
             {
                 q: 'Taking shortcuts in the Road to the Sale will save you time and make you money.',
                 a: ['True',
                 'False'],
-                c:2
+                c:1
             },
             {
                 q: 'When should you turnover a customer?',
@@ -89,7 +90,7 @@ export class CreateOrJoinRoom extends Room<any> {
                 'As soon as you feel you can\'t sell them a vehicle',
                 'When they ask to speak to a manager',
                 'When they ask for a brochure'],
-                c: 2
+                c: 1
             },
             {
                 q: 'When actively listening, you should…',
@@ -97,7 +98,7 @@ export class CreateOrJoinRoom extends Room<any> {
                 'Start forming your reply even before the customer is finished talking',
                 'Let the customer finish talking before forming your response',
                 'What\'s the question, I wasn\'t listening?'],
-                c: 3
+                c: 2
             },
             {
                 q: 'You should follow the…',
@@ -105,13 +106,16 @@ export class CreateOrJoinRoom extends Room<any> {
                 'ABG\'s',
                 'None of the above',
                 'All of the above'],
-                c: 2
+                c: 1
             }
         ];
     }
 
     onJoin (client, options, auth) {
         if (!options || !options.user) {
+            if (options.client == 'leaderboard') {
+                this.leaderboards.push(client);
+            }
             this.broadcast({key:"join", data:this.gusers});
             console.log('joined users', this.gusers.length);
             return;
@@ -132,6 +136,7 @@ export class CreateOrJoinRoom extends Room<any> {
                 }
                 item.client = client.id;
                 item.score = [];
+                item.tscore = 0;
                 this.gusers.push(item);
             }
         }
@@ -153,24 +158,41 @@ export class CreateOrJoinRoom extends Room<any> {
             this.broadcast({key:'test', data:test});
             console.log('res - test', message.test);
         } else if (message.action == 'select') {
+            console.log('req - select', client.id, message.select);
             var selectCount = 0;
             this.gusers.forEach((user)=>{
                 if (user.client == client.id) {
-                    user.score[this.step] = message.select + 1;
+                    if (message.select > 10 || message.select < 0) {
+                        user.score[this.step] = 0;
+                    } else if (this.problems[this.step].c == message.select) {
+                        user.score[this.step] = 10;
+                    } else {
+                        user.score[this.step] = 2;
+                    }
+
+                    user.tscore = 0;
+                    for (var i=0; i<user.score.length; i++) {
+                        user.tscore += user.score[i];
+                    }
                 }
-                if (user.score[this.step]) selectCount ++;
+                if (user.score.length == this.step+1) selectCount ++;
             });
+            // console.log('sssssssssssss', this.gusers);
+            
             if (selectCount == this.gusers.length) {
                 this.broadcast({key:'ready', data:this.step+1});
                 console.log('res - ready', selectCount, this.step);
             }
+
+            for (var j=0;j<this.leaderboards.length; j++) {
+                this.send(this.leaderboards[j], {key:'select', data:this.gusers});
+            }
+                
         } else if (message.action == 'result') {
             this.gusers.forEach((user)=>{
                 user.tscore = 0;
                 for (var i=0; i<user.score.length; i++) {
-                    if (user.score[i] == this.problems[i].c) {
-                        user.tscore += 20;
-                    }
+                    user.tscore += user.score[i];
                 }
             });
             this.broadcast({key:'result', data: this.gusers});

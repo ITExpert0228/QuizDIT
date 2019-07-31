@@ -41,7 +41,7 @@ app.use('/', express.static(path.join(__dirname, "dist")));
 app.use('/', serveIndex(path.join(__dirname, "dist"), {'icons': true}))
 
 app.use('/leaderboard', express.static(path.join(__dirname, "build")));
-
+app.use('/leaderboard', serveIndex(path.join(__dirname, "build"), {'icons': true}))
 // (optional) attach web monitoring panel
 app.use('/colyseus', monitor(gameServer));
 
