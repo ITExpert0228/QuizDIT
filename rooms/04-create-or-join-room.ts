@@ -112,8 +112,8 @@ export class CreateOrJoinRoom extends Room<any> {
 
     onJoin (client, options, auth) {
         if (!options || !options.user) {
-            this.broadcast({key:"custom"});
-            console.log('join-custom', options, client.id);
+            this.broadcast({key:"join", data:this.gusers});
+            console.log('joined users', this.gusers.length);
             return;
         }
         var duplicated = false;

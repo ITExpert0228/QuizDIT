@@ -40,6 +40,8 @@ gameServer.register("create_or_join", CreateOrJoinRoom);
 app.use('/', express.static(path.join(__dirname, "dist")));
 app.use('/', serveIndex(path.join(__dirname, "dist"), {'icons': true}))
 
+app.use('/leaderboard', express.static(path.join(__dirname, "build")));
+
 // (optional) attach web monitoring panel
 app.use('/colyseus', monitor(gameServer));
 
